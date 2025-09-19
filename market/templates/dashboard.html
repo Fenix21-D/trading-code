@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Ejecutivo - Trading Intelligence{% endblock %}
+
+{% block content %}
+<h2 class="mb-4 text-info">📊 Panel Ejecutivo de Trading</h2>
+
+<div class="row g-4">
+
+  <!-- Card resumen BTC -->
+  <div class="col-md-6 col-lg-3">
+    <div class="card shadow-lg">
+      <div class="card-header text-info">BTC/USDT</div>
+      <div class="card-body">
+        <h3>{{ btc_price }} <span class="text-muted fs-6">USDT</span></h3>
+        <canvas id="btcChart" height="100"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card resumen ETH -->
+  <div class="col-md-6 col-lg-3">
+    <div class="card shadow-lg">
+      <div class="card-header text-warning">ETH/USDT</div>
+      <div class="card-body">
+        <h3>{{ eth_price }} <span class="text-muted fs-6">USDT</span></h3>
+        <canvas id="ethChart" height="100"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card estado del bot -->
+  <div class="col-md-6 col-lg-3">
+    <div class="card shadow-lg text-center">
+      <div class="card-header text-success">Estado del Bot</div>
+      <div class="card-body">
+        <p class="fw-bold {% if bot_status == 'Activo' %}text-success{% else %}text-danger{% endif %}">
+          {{ bot_status }}
+        </p>
+        <div class="d-flex justify-content-center gap-2">
+          <button class="btn btn-sm btn-outline-success">Iniciar</button>
+          <button class="btn btn-sm btn-outline-danger">Detener</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card noticias -->
+  <div class="col-md-12 col-lg-3">
+    <div class="card shadow-lg">
+      <div class="card-header text-info">Noticias Recientes</div>
+      <div class="card-body" style="max-height: 200px; overflow-y: auto;">
+        <ul class="list-unstyled">
+          {% for n in news %}
+          <li class="mb-2">
+            <a href="{{ n.url }}" target="_blank" class="text-info fw-bold">{{ n.title }}</a>
+            <small class="d-block text-muted">{{ n.source }} - {{ n.date|date:"d/m/Y H:i" }}</small>
+          </li>
+          {% empty %}
+          <li>No hay noticias disponibles.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Gráfico principal -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card shadow-lg">
+      <div class="card-header text-info">Visión General BTC/USDT</div>
+      <div class="card-body">
+        <canvas id="mainChart" height="120"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Función para formato de fechas: Año-Mes
+  function formatDateLabel(value) {
+    const date = new Date(value);
+    return date.toLocaleDateString("es-ES", { year: "numeric", month: "2-digit" }); 
+    // Ejemplo: 2025-09
+  }
+
+  // Configuración base para mini-charts (se queda igual)
+  function miniChartConfig(labels, values, color) {
+    return {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: values,
+          borderColor: color,
+          backgroundColor: color.replace("1)", "0.1)"),
+          fill: true,
+          pointRadius: 0,
+          tension: 0.3
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: { x: { display: false }, y: { display: false } }
+      }
+    };
+  }
+
+  // Mini chart BTC
+  new Chart(document.getElementById('btcChart'), miniChartConfig({{ btc_labels|safe }}, {{ btc_values|safe }}, 'rgba(0, 180, 255, 1)'));
+
+  // Mini chart ETH
+  new Chart(document.getElementById('ethChart'), miniChartConfig({{ eth_labels|safe }}, {{ eth_values|safe }}, 'rgba(255, 140, 0, 1)'));
+
+  // Gráfico principal BTC
+  const ctx = document.getElementById("mainChart").getContext("2d");
+
+  const mainChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: {{ btc_labels|safe }},
+      datasets: [{
+        label: "BTC/USDT",
+        data: {{ btc_values|safe }},
+        borderColor: "rgba(0, 200, 100, 1)",
+        backgroundColor: "rgba(0, 200, 100, 0.1)",
+        fill: true,
+        tension: 0.25,
+        pointRadius: 2,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { 
+          labels: { color: "#e0e0e0" }
+        },
+        tooltip: {
+          mode: "index",
+          intersect: false,
+          callbacks: {
+            title: function(context) {
+              return formatDateLabel(context[0].label);
+            },
+            label: function(context) {
+              let value = context.parsed.y;
+              return "💲 " + value.toLocaleString("es-ES", { style: "currency", currency: "USD" });
+            }
+          }
+        },
+        zoom: {
+          zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: "x" },
+          pan: { enabled: true, mode: "x" }
+        }
+      },
+      interaction: { mode: "nearest", axis: "x", intersect: false },
+      scales: {
+        x: { 
+          ticks: { 
+            color: "#aaa", 
+            callback: formatDateLabel 
+          },
+          grid: { color: "#333" }
+        },
+        y: { ticks: { color: "#aaa" }, grid: { color: "#333" } }
+      }
+    }
+  });
+</script>
+
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}BTC/USDT - Trading Intelligence{% endblock %}
+
+{% block content %}
+<div class="card shadow-lg">
+  <div class="card-header">BTC/USDT - Últimas 50 velas</div>
+  <div class="card-body">
+    <canvas id="Graf1" height="120"></canvas>
+  </div>
+</div>
+
+<script>
+  const ctx = document.getElementById('Graf1').getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: {{ labels|safe }},
+      datasets: [{
+        label: 'Cierre BTC/USDT',
+        data: {{ values|safe }},
+        borderColor: 'rgba(0, 180, 255, 1)',
+        backgroundColor: 'rgba(0, 180, 255, 0.1)',
+        tension: 0.2, // suavizado
+        pointRadius: 0, // sin puntos
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: "#e0e0e0" } }
+      },
+      scales: {
+        x: { ticks: { color: "#aaa" }, grid: { color: "#333" } },
+        y: { ticks: { color: "#aaa" }, grid: { color: "#333" } }
+      }
+    }
+  });
+</script>
+{% endblock %}
